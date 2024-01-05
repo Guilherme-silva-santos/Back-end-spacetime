@@ -17,16 +17,26 @@ model User{
 
   apos fazer o model executar npx priimsa migarte dev para ler o arquivo de schema 
   e detecta todas as alterações que foram feitas
+
+  o cors é um metodo de segurança para ver quais urls de front poderam acessar a api
 }
 */
-
+import 'dotenv/config';
 import fastify from 'fastify';
 import { memoriesRoutes } from './routes/memories';
+import cors from '@fastify/cors';
+import { authRoutes } from './routes/auth';
 
 const app = fastify();
 
 // registrar um arquivo de rotas separado
 app.register(memoriesRoutes);
+app.register(authRoutes);
+
+app.register(cors, {
+	// origin: [' http://localhost:3000']
+	origin: true
+});
 
 app.listen({
 	port: 3333,
