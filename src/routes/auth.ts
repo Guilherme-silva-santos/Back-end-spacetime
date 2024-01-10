@@ -9,6 +9,7 @@
 import { FastifyInstance } from 'fastify';
 import axios from 'axios';
 import { z } from 'zod';
+import { prisma } from '../lib/prisma';
 
 export async function authRoutes(app: FastifyInstance){
 	app.post('/register', async (request) =>{
@@ -70,12 +71,49 @@ export async function authRoutes(app: FastifyInstance){
 		});
 
 		// dados do user retornados 
-		const user =  userSchema.parse(userResponse.data);
+		const userInfo =  userSchema.parse(userResponse.data);
 		// usa o parse para percorrer os dados da resposta do usuario
 		// então fazer a validação desses dados
 
+		// foi usado o let pois o conteudo da variavel "user"
+		// mudou para que fosse feita a criação do usuario
+		let user = await prisma.user.findUnique({
+			// pega o userid do usuario 
+			// e pesquisa por esse user id no banco
+			where:{
+				githubId: userInfo.id
+			}
+		});
+
+		if(!user) {
+			// caso esse userid não retorne nenhum usuário 
+			// então cria um usuario para esse id 
+
+			// mudando o conteudo da let user
+			user = await prisma.user.create({
+				data:{
+					githubId: userInfo.id,
+					login: userInfo.login,
+					name: userInfo.name,
+					avatarUrl: userInfo.avatar_url,
+				}
+			});
+		}
+
+		const token =  app.jwt.sign({
+			// quais informações do usuario estarão dentro do token, aqui não devem possuir informações sensiveis
+			// aqui estarão presentes informações que serão exibidas na interface, como o nome e o avatar por exemplo
+			name: user.name,
+			avatarUrl: user.avatarUrl,
+		},{
+			// a qual user pertence esse token
+			sub: user.id,
+			// quanto tempo esse token vai durar
+			expiresIn: '30 days',
+		});
+
 		return{
-			user,
+			token,
 		};
 	});
 }

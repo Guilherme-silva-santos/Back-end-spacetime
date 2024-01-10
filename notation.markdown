@@ -20,3 +20,9 @@ model Memory {
   refencia a com a tabela de usuarios
   userId String
 }
+
+
+como o access token possui um tempo de expiração muito curto é utilizado o JWT
+JWT => Json Web Token 
+token crado pelo back-end enviado pro front para que o front use esse token nas requisições 
+que são feitas no back para identificar um user logado
