@@ -19,6 +19,7 @@ export async function authRoutes(app: FastifyInstance){
 		const { code } = bodyschema.parse(request.body);
 
 		//enviando o código e querendo ele de volta com as informações
+		// usando o axios para fazer uma chamada para api do github
 		const accessTokenResponse = await axios.post(
 			//para onde vai ser feita a req
 			'https://github.com/login/oauth/access_token',
@@ -41,10 +42,40 @@ export async function authRoutes(app: FastifyInstance){
 			}
 		);
 
+		// pegando de dentro da requisição para o github o access token
 		const { access_token } = accessTokenResponse.data;
 
+		//pegando as informações do user com o access token, esse access token permite 
+		// que busquemos informações como se estivessemos logados com a conta do github do usuario
+		
+		const userResponse = await axios.get('https://api.github.com/user', {
+			headers:{
+				//o authorization é um cabeçalho http usadp para fornecer credenciais 
+				// de autenticação para acessar recursos protegidos do use
+				// o bearer diz que o token de acesso está sendo enviado no cabeçalho
+				// o bearer é para especificar que o token está presente e deve ser considerado para autenticação.
+				// com isso é possivel ter acesso aos dados do usuário
+				// pois temos o header de authorization que para ele é passa o token de acesso para obter os dados 
+				// do usuario
+				Authorization: `Bearer ${access_token}`
+			}
+		});
+
+		// validação para os dados do usuario
+		const userSchema = z.object({
+			id: z.number(),
+			login: z.string(),
+			name: z.string(),
+			avatar_url: z.string().url(),
+		});
+
+		// dados do user retornados 
+		const user =  userSchema.parse(userResponse.data);
+		// usa o parse para percorrer os dados da resposta do usuario
+		// então fazer a validação desses dados
+
 		return{
-			access_token
+			user,
 		};
 	});
 }
